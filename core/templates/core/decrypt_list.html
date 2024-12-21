@@ -1,0 +1,13 @@
+<!-- core/templates/core/decrypt_list.html -->
+{% extends 'core/base.html' %}
+{% block content %}
+<h3>Select a Stego Image to Decrypt</h3>
+<ul>
+  {% for img in images %}
+  <li>
+    ID: {{ img.id }}
+    <a href="{% url 'decrypt-detail' img.id %}">Decrypt</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock content %}

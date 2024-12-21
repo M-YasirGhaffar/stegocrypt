@@ -1,0 +1,22 @@
+<!-- core/templates/core/index.html -->
+{% extends 'core/base.html' %}
+{% block content %}
+<h3>Welcome to the Django Steganography App</h3>
+
+{% if user.is_authenticated %}
+  <p>You are logged in as {{ user.username }}.</p>
+  <h4>Your Images:</h4>
+  <ul>
+    {% for img in images %}
+    <li>
+      ID: {{ img.id }} 
+      {% if img.stego_image %}
+        | <a href="{% url 'decrypt-detail' img.id %}">Decrypt</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Please <a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a>.</p>
+{% endif %}
+{% endblock content %}
