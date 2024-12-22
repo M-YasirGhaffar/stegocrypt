@@ -1,9 +1,19 @@
-{% extends 'core/base.html' %}
+{% extends "base.html" %}
+{% block title %}Register - Django Steg{% endblock title %}
+{% block nav_links %}
+  <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+  <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
+  <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
+  <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+{% endblock nav_links %}
+
 {% block content %}
-<h3>Register</h3>
-<form method="POST">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Register</button>
-</form>
+<div class="max-w-md mx-auto bg-white rounded shadow p-6 my-4">
+  <h3 class="text-xl font-semibold mb-4">Register</h3>
+  <form method="POST" class="space-y-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Register</button>
+  </form>
+</div>
 {% endblock %}

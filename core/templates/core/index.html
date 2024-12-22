@@ -1,20 +1,41 @@
-{% extends 'core/base.html' %}
-{% block content %}
-<h3>Welcome {% if user.is_authenticated %}{{ user.username }}{% endif %}</h3>
+{% extends "base.html" %}
+{% block title %}Home - Django Steg{% endblock title %}
+{% block nav_links %}
+  {% if user.is_authenticated %}
+    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+    <a href="{% url 'encrypt' %}" class="text-blue-600 hover:underline">Encrypt</a>
+    <a href="{% url 'decrypt-list' %}" class="text-blue-600 hover:underline">Decrypt</a>
+    <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+    <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
+  {% else %}
+    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+    <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
+    <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
+    <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+  {% endif %}
+{% endblock nav_links %}
 
-{% if user.is_authenticated %}
-  <p>Your images:</p>
-  <ul>
-    {% for img in images %}
-      <li>
-        #{{ img.id }} - 
-        {% if img.is_public %}[Public] {% endif %}
-        <a href="{% url 'decrypt-detail' img.id %}">Decrypt</a> | 
-        <a href="{% url 'share-image' img.id %}">Share</a>
+{% block content %}
+<div class="bg-white rounded shadow p-6 my-4">
+  <h3 class="text-xl font-semibold mb-4">
+    Welcome{% if user.is_authenticated %}, {{ user.username }}{% endif %}
+  </h3>
+  
+  {% if user.is_authenticated %}
+    <p class="mb-2">Your images:</p>
+    <ul class="list-disc list-inside">
+      {% for img in images %}
+      <li class="my-2">
+        #{{ img.id }}
+        {% if img.is_public %}[Public]{% endif %}
+        <a href="{% url 'decrypt-detail' img.id %}" class="text-blue-600 hover:underline ml-2">Decrypt</a> |
+        <a href="{% url 'share-image' img.id %}" class="text-blue-600 hover:underline">Share</a>
       </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>Please <a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a>.</p>
-{% endif %}
-{% endblock %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Please <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a> or
+    <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>.</p>
+  {% endif %}
+</div>
+{% endblock content %}

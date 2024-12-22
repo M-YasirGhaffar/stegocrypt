@@ -1,12 +1,23 @@
-{% extends 'core/base.html' %}
+{% extends "base.html" %}
+{% block title %}Decrypt - Django Steg{% endblock title %}
+{% block nav_links %}
+  <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+  <a href="{% url 'encrypt' %}" class="text-blue-600 hover:underline">Encrypt</a>
+  <a href="{% url 'decrypt-list' %}" class="text-blue-600 hover:underline">Decrypt</a>
+  <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+  <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
+{% endblock nav_links %}
+
 {% block content %}
-<h3>Decrypt Image #{{ eimg.id }}</h3>
-{% if eimg.stego_image %}
-  <img src="{{ eimg.stego_image.url }}" width="250"><br><br>
-{% endif %}
-<form method="POST">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Decrypt</button>
-</form>
+<div class="max-w-md mx-auto bg-white rounded shadow p-6 my-4">
+  <h3 class="text-xl font-semibold mb-4">Decrypt Image #{{ eimg.id }}</h3>
+  {% if eimg.stego_image %}
+    <img src="{{ eimg.stego_image.url }}" alt="Stego Image" class="w-72 mb-4">
+  {% endif %}
+  <form method="POST" class="space-y-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Decrypt</button>
+  </form>
+</div>
 {% endblock %}

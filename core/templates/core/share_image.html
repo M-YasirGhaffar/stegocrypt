@@ -1,10 +1,20 @@
-{% extends 'core/base.html' %}
-{% block content %}
-<h3>Share Image #{{ image.id }}</h3>
+{% extends "base.html" %}
+{% block title %}Share - Django Steg{% endblock title %}
+{% block nav_links %}
+  <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+  <a href="{% url 'encrypt' %}" class="text-blue-600 hover:underline">Encrypt</a>
+  <a href="{% url 'decrypt-list' %}" class="text-blue-600 hover:underline">Decrypt</a>
+  <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+  <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
+{% endblock nav_links %}
 
-<form method="POST">
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded shadow p-6 my-4">
+  <h3 class="text-xl font-semibold mb-4">Share Image #{{ image.id }}</h3>
+  <form method="POST" class="space-y-4">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Share</button>
-</form>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Share</button>
+  </form>
+</div>
 {% endblock %}

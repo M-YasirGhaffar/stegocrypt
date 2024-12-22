@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Django Steganography{% endblock title %}</title>
+  {% load static %}
+  <!-- Link to compiled Tailwind CSS (check your actual build path) -->
+  <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow mb-4">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Django Steganography</h1>
+      <nav class="space-x-4">
+        <!-- We’ll render nav links here or in child templates -->
+        {% block nav_links %}{% endblock nav_links %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4">
+    {% if messages %}
+      <ul class="my-4">
+        {% for msg in messages %}
+          <li class="bg-gray-200 p-2 rounded my-1">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock content %}
+  </main>
+
+  <footer class="bg-white mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-sm text-gray-500">
+      <p>&copy; 2023 Django Steganography</p>
+    </div>
+  </footer>
+</body>
+</html>

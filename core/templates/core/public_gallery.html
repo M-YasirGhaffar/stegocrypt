@@ -1,12 +1,30 @@
-{% extends 'core/base.html' %}
+{% extends "base.html" %}
+{% block title %}Public Gallery - Django Steg{% endblock title %}
+{% block nav_links %}
+  {% if user.is_authenticated %}
+    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+    <a href="{% url 'encrypt' %}" class="text-blue-600 hover:underline">Encrypt</a>
+    <a href="{% url 'decrypt-list' %}" class="text-blue-600 hover:underline">Decrypt</a>
+    <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+    <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
+  {% else %}
+    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
+    <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
+    <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
+    <a href="{% url 'public-gallery' %}" class="text-blue-600 hover:underline">Public Gallery</a>
+  {% endif %}
+{% endblock nav_links %}
+
 {% block content %}
-<h3>Public Gallery</h3>
-<ul>
-{% for img in images %}
-  <li>
-    #{{ img.id }} by {{ img.user.username }}
-    <a href="{% url 'decrypt-detail' img.id %}">Decrypt</a>
-  </li>
-{% endfor %}
-</ul>
+<div class="bg-white rounded shadow p-6 my-4">
+  <h3 class="text-xl font-semibold mb-4">Public Gallery</h3>
+  <ul class="list-disc list-inside">
+    {% for img in images %}
+      <li class="my-2">
+        #{{ img.id }} by {{ img.user.username }}
+        <a href="{% url 'decrypt-detail' img.id %}" class="text-blue-600 hover:underline ml-2">Decrypt</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}
