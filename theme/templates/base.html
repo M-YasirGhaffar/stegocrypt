@@ -2,23 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Django Steganography{% endblock title %}</title>
   {% load static %}
-  <!-- Link to compiled Tailwind CSS (check your actual build path) -->
   <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
   <header class="bg-white shadow mb-4">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-      <h1 class="text-2xl font-bold">Django Steganography</h1>
-      <nav class="space-x-4">
-        <!-- We’ll render nav links here or in child templates -->
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
+      <h1 class="text-2xl font-bold mb-2 sm:mb-0">Django Steganography</h1>
+      <nav class="space-x-2 sm:space-x-4 flex flex-wrap justify-center">
         {% block nav_links %}{% endblock nav_links %}
       </nav>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4">
+  <main class="flex-grow max-w-7xl mx-auto px-4 w-full">
     {% if messages %}
       <ul class="my-4">
         {% for msg in messages %}
