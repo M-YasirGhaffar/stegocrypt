@@ -1,35 +1,36 @@
 # core/encryption.py
 import io
+import secrets
 from stegano.lsb import hide
 from PIL import Image
 from django.core.files.base import ContentFile
-from .utils import derive_key_from_password, aes_encrypt
+from .utils import aes_encrypt
+from .utils_rsa import rsa_encrypt_with_public_key
 
-def encrypt_and_embed_message(original_image_path: str, message: str, password: str) -> bytes:
+def encrypt_and_embed_message(original_image_path: str, message: str):
     """
-    1) Derive AES key from 'password'.
-    2) Encrypt 'message'.
-    3) Embed the (iv+ciphertext) in the image using Stegano.
-    4) Return stego PNG bytes.
+    1) Generate a random AES key.
+    2) Encrypt 'message' with that AES key.
+    3) Hide the IV+ciphertext in the original_image using Stegano.
+    4) Return stego image bytes, plus the AES key (for sharing).
     """
-    salt = b'some_fixed_salt'  # For demonstration. Use a random salt per user or message in production.
-    key = derive_key_from_password(password, salt)
+    # 1) Generate random AES key
+    aes_key = secrets.token_bytes(32)
 
-    # Encrypt
-    iv, ciphertext = aes_encrypt(message.encode('utf-8'), key)
+    # 2) AES-encrypt the message
+    iv, ciphertext = aes_encrypt(message.encode('utf-8'), aes_key)
     combined_data = iv + ciphertext
     combined_hex = combined_data.hex()
 
-    # Embed with Stegano
+    # 3) Stegano hide
     stego_image = hide(original_image_path, combined_hex)
 
-    # Convert to PNG bytes
+    # Save to bytes
     img_io = io.BytesIO()
     stego_image.save(img_io, format='PNG')
-    return img_io.getvalue()
+    stego_bytes = img_io.getvalue()
+
+    return stego_bytes, aes_key
 
 def create_stego_django_file(stego_bytes: bytes, filename="stego.png"):
-    """
-    Wrap raw bytes in a Django ContentFile to store in an ImageField.
-    """
     return ContentFile(stego_bytes, name=filename)

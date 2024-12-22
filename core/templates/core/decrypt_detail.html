@@ -1,12 +1,12 @@
-<!-- core/templates/core/decrypt_detail.html -->
 {% extends 'core/base.html' %}
 {% block content %}
 <h3>Decrypt Image #{{ eimg.id }}</h3>
-<img src="{{ eimg.stego_image.url }}" alt="Stego Image" width="300" /><br><br>
-
+{% if eimg.stego_image %}
+  <img src="{{ eimg.stego_image.url }}" width="250"><br><br>
+{% endif %}
 <form method="POST">
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit">Decrypt</button>
 </form>
-{% endblock content %}
+{% endblock %}

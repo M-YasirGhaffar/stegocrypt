@@ -1,12 +1,12 @@
 {% extends 'core/base.html' %}
 {% block content %}
-<h3>Decryptable Images</h3>
+<h3>Public Gallery</h3>
 <ul>
-  {% for img in images %}
+{% for img in images %}
   <li>
-    #{{ img.id }} - 
+    #{{ img.id }} by {{ img.user.username }}
     <a href="{% url 'decrypt-detail' img.id %}">Decrypt</a>
   </li>
-  {% endfor %}
+{% endfor %}
 </ul>
 {% endblock %}

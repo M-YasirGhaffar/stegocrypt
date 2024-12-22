@@ -10,6 +10,9 @@ SALT_SIZE = 16
 ITERATIONS = 100000
 AES_KEY_SIZE = 32
 
+def sha256_hash(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
 def derive_key_from_password(password: str, salt: bytes) -> bytes:
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -25,6 +28,7 @@ def aes_encrypt(plaintext: bytes, key: bytes) -> (bytes, bytes):
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     encryptor = cipher.encryptor()
 
+    # PKCS7 padding
     pad_len = 16 - (len(plaintext) % 16)
     plaintext += bytes([pad_len]) * pad_len
 
@@ -38,6 +42,3 @@ def aes_decrypt(iv: bytes, ciphertext: bytes, key: bytes) -> bytes:
 
     pad_len = decrypted_data[-1]
     return decrypted_data[:-pad_len]
-
-def sha256_hash(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()

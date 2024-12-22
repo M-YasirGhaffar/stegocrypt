@@ -26,6 +26,15 @@ class EncryptionForm(forms.Form):
     original_image = forms.ImageField(required=True)
     secret_message = forms.CharField(widget=forms.Textarea, required=True)
     password = forms.CharField(widget=forms.PasswordInput, required=True)
+    is_public = forms.BooleanField(required=False, label="Make image public?")
 
 class DecryptionPasswordForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput, required=True)
+
+class ShareForm(forms.Form):
+    recipient_username = forms.CharField(required=True, label="Recipient Username")
+    owner_password = forms.CharField(
+        required=True, 
+        label="Your (Owner) Password",
+        widget=forms.PasswordInput
+    )

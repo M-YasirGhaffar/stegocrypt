@@ -85,12 +85,15 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
+# steganography/settings.py
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 12},  # Enforces a minimum password length of 12 characters
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
