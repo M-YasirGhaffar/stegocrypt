@@ -10,6 +10,9 @@ from django.http import FileResponse, HttpResponseForbidden
 from django.core.files.temp import NamedTemporaryFile
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from .utils import create_thumbnail, get_image_data
+
 
 from .models import EncryptedImage
 from .forms import (
@@ -30,29 +33,48 @@ from .utils import (
 from .encryption import encrypt_and_embed_message, create_stego_django_file
 from .decryption import decrypt_message_from_stego
 
+@login_required
 def index(request):
+    """Modified index view to include image previews"""
     if not request.user.is_authenticated:
         return render(request, 'core/index.html')
 
     my_images = EncryptedImage.objects.filter(user=request.user)
     shared_images = EncryptedImage.objects.filter(shared_with=request.user).exclude(user=request.user)
 
-    enc_form = EncryptionForm()
-    dec_form = DecryptSingleFieldForm()
+    # Generate image data with previews
+    my_images_data = []
+    for img in my_images:
+        img_data = get_image_data(img)
+        if img_data:
+            my_images_data.append(img_data)
 
-    last_decrypted_msg = request.session.pop('last_decrypted_msg', None)
-    last_decrypted_img_id = request.session.pop('last_decrypted_img_id', None)
-    last_decrypted_error = request.session.pop('last_decrypted_error', None)
+    shared_images_data = []
+    for img in shared_images:
+        img_data = get_image_data(img)
+        if img_data:
+            shared_images_data.append(img_data)
 
     context = {
-        'my_images': my_images,
-        'shared_images': shared_images,
-        'enc_form': enc_form,
-        'dec_form': dec_form,
-        'last_decrypted_msg': last_decrypted_msg,
-        'last_decrypted_img_id': last_decrypted_img_id,
-        'last_decrypted_error': last_decrypted_error
+        'user_info': {
+            'username': request.user.username,
+            'email': request.user.email,
+            'date_joined': request.user.date_joined.isoformat(),
+            'total_images': len(my_images_data),
+            'shared_with_me': len(shared_images_data)
+        },
+        'my_images': my_images_data,
+        'shared_images': shared_images_data,
+        'enc_form': EncryptionForm(),
+        'dec_form': DecryptSingleFieldForm(),
+        'last_decrypted_msg': request.session.pop('last_decrypted_msg', None),
+        'last_decrypted_img_id': request.session.pop('last_decrypted_img_id', None),
+        'last_decrypted_error': request.session.pop('last_decrypted_error', None)
     }
+
+    # Return JSON for AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(context)
     return render(request, 'core/index.html', context)
 
 def register_view(request):
@@ -276,3 +298,30 @@ def decrypt_upload_view(request):
     else:
         form = DecryptionUploadForm()
     return render(request, 'core/decrypt_upload.html', {'form': form})
+
+@login_required
+def get_user_info(request):
+    """Return current user information"""
+    user = request.user
+    return JsonResponse({
+        'username': user.username,
+        'email': user.email,
+        'date_joined': user.date_joined.isoformat(),
+        'last_login': user.last_login.isoformat() if user.last_login else None,
+        'total_images': EncryptedImage.objects.filter(user=user).count(),
+        'shared_with_me': EncryptedImage.objects.filter(shared_with=user).count()
+    })
+    
+@login_required
+def get_image_preview(request, image_id):
+    """Return image preview and metadata"""
+    eimg = get_object_or_404(EncryptedImage, id=image_id)
+    
+    # Check permissions
+    if eimg.user != request.user and request.user not in eimg.shared_with.all():
+        return HttpResponseForbidden("No permission to view this image.")
+    
+    image_data = get_image_data(eimg)
+    if image_data:
+        return JsonResponse(image_data)
+    return JsonResponse({'error': 'Could not generate preview'}, status=400)
