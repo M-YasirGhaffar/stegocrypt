@@ -1,50 +1,111 @@
 {% extends "base.html" %}
-{% block title %}Home - Django Steg{% endblock title %}
+{% load static %}
+{% block title %}Dashboard{% endblock title %}
+
 {% block nav_links %}
   {% if user.is_authenticated %}
-    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
-    <a href="{% url 'encrypt' %}" class="text-blue-600 hover:underline">Encrypt</a>
-    <a href="{% url 'decrypt-list' %}" class="text-blue-600 hover:underline">Decrypt</a>
-    <a href="{% url 'shared-gallery' %}" class="text-blue-600 hover:underline">Shared Gallery</a>
+    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Dashboard</a>
+    <a href="{% url 'decrypt-upload' %}" class="text-blue-600 hover:underline">Upload &amp; Decrypt</a>
     <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
   {% else %}
     <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
     <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
     <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
-    <a href="{% url 'shared-gallery' %}" class="text-blue-600 hover:underline">Shared Gallery</a>
   {% endif %}
 {% endblock nav_links %}
 
 {% block content %}
-<div class="bg-white rounded shadow p-6 my-4">
-  <h3 class="text-xl font-semibold mb-4">
-    Welcome{% if user.is_authenticated %}, {{ user.username }}{% endif %}
-  </h3>
-  
-  {% if user.is_authenticated %}
-    <p class="mb-2">Your images:</p>
-    <ul class="list-disc list-inside">
-      {% for img in images %}
-      <li class="my-2">
-        #{{ img.id }}
-        {% if img.is_public %}[Public]{% else %}[Private]{% endif %}
-        <a href="{% url 'decrypt-detail' img.id %}" class="text-blue-600 hover:underline ml-2">Decrypt</a>
-        |
-        <!-- Download link -->
-        <a href="{% url 'download-stego' img.id %}" class="text-blue-600 hover:underline">Download</a>
-        <!-- Only show "Share" if is_public is True -->
-        {% if img.is_public %}
-          |
-          <a href="{% url 'share-image' img.id %}" class="text-blue-600 hover:underline">Share</a>
-        {% endif %}
-      </li>
-      {% empty %}
-      <li>No images yet.</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Please <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a> or
-    <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>.</p>
+{% if user.is_authenticated %}
+  <div class="bg-white rounded shadow p-6 my-4">
+    <h2 class="text-xl font-bold mb-4">My Images</h2>
+    {% if my_images %}
+      <ul class="list-disc list-inside">
+        {% for img in my_images %}
+          <li class="my-2">
+            #{{ img.id }}
+            {% if img.is_public %}(Shareable){% else %}(Private){% endif %}
+            |
+            <form method="POST" action="{% url 'post-decrypt' img.id %}" class="inline">
+              {% csrf_token %}
+              <input 
+                type="password" 
+                name="pass_or_pw" 
+                placeholder="Pass-Key / Account Password" 
+                class="border rounded px-2 text-sm"
+              />
+              <button type="submit" class="text-blue-600 hover:underline ml-1">Decrypt</button>
+            </form>
+            |
+            <a href="{% url 'download-stego' img.id %}" class="text-blue-600 hover:underline">Download</a>
+            {% if img.is_public %}
+              | <a href="{% url 'share-image' img.id %}" class="text-blue-600 hover:underline">Share</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>You have no images yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded shadow p-6 my-4">
+    <h2 class="text-xl font-bold mb-4">Shared With Me</h2>
+    {% if shared_images %}
+      <ul class="list-disc list-inside">
+        {% for img in shared_images %}
+          <li class="my-2">
+            #{{ img.id }} by {{ img.user.username }}
+            |
+            <form method="POST" action="{% url 'post-decrypt' img.id %}" class="inline">
+              {% csrf_token %}
+              <input 
+                type="password" 
+                name="pass_or_pw" 
+                placeholder="Pass-Key / Account Password" 
+                class="border rounded px-2 text-sm"
+              />
+              <button type="submit" class="text-blue-600 hover:underline ml-1">Decrypt</button>
+            </form>
+            |
+            <a href="{% url 'download-stego' img.id %}" class="text-blue-600 hover:underline">Download</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No images are shared with you yet.</p>
+    {% endif %}
+  </div>
+
+  {% if last_decrypted_msg %}
+    <div class="bg-green-100 rounded p-4 my-4">
+      <h3 class="text-md font-semibold">Decryption Result (Image #{{ last_decrypted_img_id }})</h3>
+      <p class="mt-2">{{ last_decrypted_msg }}</p>
+    </div>
+  {% elif last_decrypted_error %}
+    <div class="bg-red-100 rounded p-4 my-4">
+      <h3 class="text-md font-semibold text-red-700">Decryption Error</h3>
+      <p class="mt-2">{{ last_decrypted_error }}</p>
+    </div>
   {% endif %}
-</div>
+
+  <div class="bg-white rounded shadow p-6 my-4">
+    <h2 class="text-xl font-bold mb-4">Encrypt a New Image</h2>
+    <form method="POST" action="{% url 'post-encrypt' %}" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      {{ enc_form.as_p }}
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Encrypt &amp; Save</button>
+    </form>
+  </div>
+
+{% else %}
+  <div class="bg-white rounded shadow p-6 my-4">
+    <h3 class="text-xl font-semibold mb-4">Welcome to Django Steganography</h3>
+    <p>
+      Please 
+      <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
+      or 
+      <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>.
+    </p>
+  </div>
+{% endif %}
 {% endblock content %}

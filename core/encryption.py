@@ -1,36 +1,27 @@
 # core/encryption.py
 import io
-import secrets
-from stegano.lsb import hide
-from PIL import Image
 from django.core.files.base import ContentFile
-from .utils import aes_encrypt
-from .utils_rsa import rsa_encrypt_with_public_key
+from stegano.lsb import hide
+from .utils import aes_encrypt, sha256_hash
 
-def encrypt_and_embed_message(original_image_path: str, message: str):
+def encrypt_and_embed_message(original_image_path: str, secret_message: str, pass_key: str) -> bytes:
     """
-    1) Generate a random AES key.
-    2) Encrypt 'message' with that AES key.
-    3) Hide the IV+ciphertext in the original_image using Stegano.
-    4) Return stego image bytes, plus the AES key (for sharing).
+    1) Derive AES key from pass_key => (sha256 of pass_key).
+    2) AES-encrypt 'secret_message'.
+    3) Embed IV+ciphertext in LSB.
     """
-    # 1) Generate random AES key
-    aes_key = secrets.token_bytes(32)
+    import hashlib, secrets
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-    # 2) AES-encrypt the message
-    iv, ciphertext = aes_encrypt(message.encode('utf-8'), aes_key)
-    combined_data = iv + ciphertext
-    combined_hex = combined_data.hex()
+    aes_key = hashlib.sha256(pass_key.encode('utf-8')).digest()
+    iv, ciphertext = aes_encrypt(secret_message.encode('utf-8'), aes_key)
+    combined = iv + ciphertext
+    combined_hex = combined.hex()
 
-    # 3) Stegano hide
     stego_image = hide(original_image_path, combined_hex)
-
-    # Save to bytes
     img_io = io.BytesIO()
     stego_image.save(img_io, format='PNG')
-    stego_bytes = img_io.getvalue()
-
-    return stego_bytes, aes_key
+    return img_io.getvalue()
 
 def create_stego_django_file(stego_bytes: bytes, filename="stego.png"):
     return ContentFile(stego_bytes, name=filename)

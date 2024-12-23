@@ -2,3 +2,4 @@ Django
 cryptography
 Stegano
 Pillow
+django-tailwind
