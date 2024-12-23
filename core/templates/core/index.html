@@ -1,184 +1,165 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Dashboard{% endblock title %}
+{% block title %}Dashboard - StegoCrypt{% endblock title %}
 
 {% block nav_links %}
   {% if user.is_authenticated %}
-    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Dashboard</a>
-    <a href="{% url 'decrypt-upload' %}" class="text-blue-600 hover:underline">Upload &amp; Decrypt</a>
-    <a href="{% url 'logout' %}" class="text-blue-600 hover:underline">Logout</a>
+    <a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Dashboard</a>
+    <a href="{% url 'decrypt-upload' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Upload & Decrypt</a>
   {% else %}
-    <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
-    <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
-    <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
+    <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Login</a>
+    <a href="{% url 'register' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Register</a>
   {% endif %}
 {% endblock nav_links %}
 
 {% block content %}
 {% if user.is_authenticated %}
-  <!-- My Images Section -->
-  <div class="bg-white rounded shadow p-6 my-4">
-    <h2 class="text-xl font-bold mb-4">My Images</h2>
-    {% if my_images %}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for img in my_images %}
-          <div class="bg-white p-4 rounded-lg shadow">
-            <div class="aspect-w-4 aspect-h-3 mb-3">
-              <img src="{{ img.preview }}" 
-                   alt="Preview #{{ img.id }}"
-                   class="object-cover rounded-lg w-full h-full">
-            </div>
-            <div class="text-sm">
-              <p class="font-semibold">#{{ img.id }} {% if img.is_public %}(Shareable){% else %}(Private){% endif %}</p>
-              <p class="text-gray-500 text-xs mb-2">{{ img.filename }}</p>
-              <div class="flex flex-wrap gap-2">
-                <form method="POST" action="{% url 'post-decrypt' img.id %}" class="flex-grow">
+  <div class="space-y-8">
+    <!-- Encrypt New Image Section -->
+    <div class="bg-white shadow-md rounded-lg p-6" x-data="{ isEncrypt: true }">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">Encrypt/Decrypt Image</h2>
+        <div class="flex items-center space-x-2">
+          <button @click="isEncrypt = true" :class="{ 'bg-indigo-600 text-white': isEncrypt, 'bg-gray-200 text-gray-700': !isEncrypt }" class="px-4 py-2 rounded-md transition duration-150 ease-in-out">
+            Encrypt
+          </button>
+          <button @click="isEncrypt = false" :class="{ 'bg-indigo-600 text-white': !isEncrypt, 'bg-gray-200 text-gray-700': isEncrypt }" class="px-4 py-2 rounded-md transition duration-150 ease-in-out">
+            Decrypt
+          </button>
+        </div>
+      </div>
+      
+      <!-- Encrypt Form -->
+      <form x-show="isEncrypt" method="POST" action="{% url 'post-encrypt' %}" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">Select an image</label>
+          <input type="file" name="{{ enc_form.original_image.name }}" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+        </div>
+        <div class="space-y-2">
+          <label for="{{ enc_form.secret_message.id_for_label }}" class="block text-sm font-medium text-gray-700">Secret Message</label>
+          <textarea name="{{ enc_form.secret_message.name }}" id="{{ enc_form.secret_message.id_for_label }}" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Enter your secret message"></textarea>
+        </div>
+        <div class="space-y-2">
+          <label for="{{ enc_form.pass_key.id_for_label }}" class="block text-sm font-medium text-gray-700">Pass Key</label>
+          <input type="password" name="{{ enc_form.pass_key.name }}" id="{{ enc_form.pass_key.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Enter pass key">
+        </div>
+        <div class="flex items-center">
+          <input type="checkbox" name="{{ enc_form.is_public.name }}" id="{{ enc_form.is_public.id_for_label }}" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+          <label for="{{ enc_form.is_public.id_for_label }}" class="ml-2 block text-sm text-gray-900">Make Public</label>
+        </div>
+        <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+          Encrypt & Save
+        </button>
+      </form>
+      
+      <!-- Decrypt Form -->
+      <form x-show="!isEncrypt" method="POST" action="{% url 'decrypt-upload' %}" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">Select encrypted image</label>
+          <input type="file" name="{{ form.stego_image_file.name }}" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+        </div>
+        <div class="space-y-2">
+          <label for="{{ form.pass_or_pw.id_for_label }}" class="block text-sm font-medium text-gray-700">Pass Key</label>
+          <input type="password" name="{{ form.pass_or_pw.name }}" id="{{ form.pass_or_pw.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Enter pass key for decryption">
+        </div>
+        <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+          Decrypt Image
+        </button>
+      </form>
+    </div>
+
+    <!-- My Images Section -->
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">My Images</h2>
+      {% if my_images %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for img in my_images %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <img src="{{ img.preview }}" alt="Preview #{{ img.id }}" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <p class="font-semibold text-gray-800">#{{ img.id }} {% if img.is_public %}(Shareable){% else %}(Private){% endif %}</p>
+                <p class="text-sm text-gray-600 mb-2">{{ img.filename }}</p>
+                <form method="POST" action="{% url 'post-decrypt' img.id %}" class="mb-2">
                   {% csrf_token %}
-                  <div class="flex gap-1">
-                    <input type="password" 
-                           name="pass_or_pw" 
-                           placeholder="Pass-Key / Password" 
-                           class="flex-grow text-sm border rounded px-2 py-1">
-                    <button type="submit" 
-                            class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                  <div class="flex">
+                    <input type="password" name="pass_or_pw" placeholder="Pass Key" class="flex-grow rounded-l-md border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       Decrypt
                     </button>
                   </div>
                 </form>
-                <a href="{% url 'download-stego' img.id %}" 
-                   class="text-blue-600 hover:underline text-sm py-1">
-                  Download
-                </a>
-                {% if img.is_public %}
-                  <a href="{% url 'share-image' img.id %}" 
-                     class="text-blue-600 hover:underline text-sm py-1">
-                    Share
-                  </a>
-                {% endif %}
+                <div class="flex justify-between">
+                  <a href="{% url 'download-stego' img.id %}" class="text-indigo-600 hover:text-indigo-800 text-sm">Download</a>
+                  {% if img.is_public %}
+                    <a href="{% url 'share-image' img.id %}" class="text-indigo-600 hover:text-indigo-800 text-sm">Share</a>
+                  {% endif %}
+                </div>
               </div>
             </div>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>You have no images yet.</p>
-    {% endif %}
-  </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-600">You have no images yet.</p>
+      {% endif %}
+    </div>
 
-  <!-- Shared With Me Section -->
-  <div class="bg-white rounded shadow p-6 my-4">
-    <h2 class="text-xl font-bold mb-4">Shared With Me</h2>
-    {% if shared_images %}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for img in shared_images %}
-          <div class="bg-white p-4 rounded-lg shadow">
-            <div class="aspect-w-4 aspect-h-3 mb-3">
-              <img src="{{ img.preview }}" 
-                   alt="Preview #{{ img.id }}"
-                   class="object-cover rounded-lg w-full h-full">
-            </div>
-            <div class="text-sm">
-              <p class="font-semibold">#{{ img.id }} by {{ img.owner }}</p>
-              <p class="text-gray-500 text-xs mb-2">{{ img.filename }}</p>
-              <div class="flex flex-wrap gap-2">
-                <form method="POST" action="{% url 'post-decrypt' img.id %}" class="flex-grow">
+    <!-- Shared With Me Section -->
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Shared With Me</h2>
+      {% if shared_images %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for img in shared_images %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <img src="{{ img.preview }}" alt="Preview #{{ img.id }}" class="w-full h-48 object-cover">
+              <div class="p-4">
+                <p class="font-semibold text-gray-800">#{{ img.id }} by {{ img.owner }}</p>
+                <p class="text-sm text-gray-600 mb-2">{{ img.filename }}</p>
+                <form method="POST" action="{% url 'post-decrypt' img.id %}" class="mb-2">
                   {% csrf_token %}
-                  <div class="flex gap-1">
-                    <input type="password" 
-                           name="pass_or_pw" 
-                           placeholder="Pass-Key" 
-                           class="flex-grow text-sm border rounded px-2 py-1">
-                    <button type="submit" 
-                            class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                  <div class="flex">
+                    <input type="password" name="pass_or_pw" placeholder="Pass Key" class="flex-grow rounded-l-md border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       Decrypt
                     </button>
                   </div>
                 </form>
-                <a href="{% url 'download-stego' img.id %}" 
-                   class="text-blue-600 hover:underline text-sm py-1">
-                  Download
-                </a>
+                <div class="flex justify-between">
+                  <a href="{% url 'download-stego' img.id %}" class="text-indigo-600 hover:text-indigo-800 text-sm">Download</a>
+                </div>
               </div>
             </div>
-          </div>
-        {% endfor %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-600">No images are shared with you yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Decryption Result Section -->
+    {% if last_decrypted_msg %}
+      <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md">
+        <h3 class="font-semibold">Decryption Result (Image #{{ last_decrypted_img_id }})</h3>
+        <p class="mt-2">{{ last_decrypted_msg }}</p>
       </div>
-    {% else %}
-      <p>No images are shared with you yet.</p>
+    {% elif last_decrypted_error %}
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md">
+        <h3 class="font-semibold">Decryption Error</h3>
+        <p class="mt-2">{{ last_decrypted_error }}</p>
+      </div>
     {% endif %}
   </div>
-
-  <!-- Decryption Result Section -->
-  {% if last_decrypted_msg %}
-    <div class="bg-green-100 rounded p-4 my-4">
-      <h3 class="text-md font-semibold">Decryption Result (Image #{{ last_decrypted_img_id }})</h3>
-      <p class="mt-2">{{ last_decrypted_msg }}</p>
-    </div>
-  {% elif last_decrypted_error %}
-    <div class="bg-red-100 rounded p-4 my-4">
-      <h3 class="text-md font-semibold text-red-700">Decryption Error</h3>
-      <p class="mt-2">{{ last_decrypted_error }}</p>
-    </div>
-  {% endif %}
-
-  <!-- Encrypt New Image Section -->
-  <div class="bg-white rounded shadow p-6 my-4">
-    <h2 class="text-xl font-bold mb-4">Encrypt a New Image</h2>
-    <form method="POST" 
-          action="{% url 'post-encrypt' %}" 
-          enctype="multipart/form-data" 
-          class="space-y-4"
-          x-data="{ preview: null }">
-      {% csrf_token %}
-      <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">
-          Select an image
-        </label>
-        <input type="file" 
-               name="{{ enc_form.original_image.name }}"
-               accept="image/*"
-               class="block w-full text-sm"
-               @change="preview = URL.createObjectURL($event.target.files[0])">
-        <!-- Image Preview -->
-        <template x-if="preview">
-          <div class="mt-2 aspect-w-4 aspect-h-3">
-            <img :src="preview" 
-                 class="object-cover rounded-lg w-full h-full"
-                 alt="Upload Preview">
-          </div>
-        </template>
-      </div>
-      <!-- Rest of the form fields -->
-      <div class="space-y-2">
-        {{ enc_form.secret_message.label_tag }}
-        {{ enc_form.secret_message }}
-      </div>
-      <div class="space-y-2">
-        {{ enc_form.pass_key.label_tag }}
-        {{ enc_form.pass_key }}
-      </div>
-      <div class="flex items-center">
-        {{ enc_form.is_public }}
-        <label class="ml-2 text-sm text-gray-700">
-          {{ enc_form.is_public.label }}
-        </label>
-      </div>
-      <button type="submit" 
-              class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        Encrypt & Save
-      </button>
-    </form>
-  </div>
-
 {% else %}
-  <div class="bg-white rounded shadow p-6 my-4">
-    <h3 class="text-xl font-semibold mb-4">Welcome to Django Steganography</h3>
-    <p>
-      Please 
-      <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
-      or 
-      <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>.
+  <div class="bg-white shadow-md rounded-lg p-6">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Welcome to StegoCrypt</h3>
+    <p class="text-gray-600 mb-4">
+      StegoCrypt is a secure platform for image steganography. Hide your secret messages within images and share them securely.
     </p>
+    <div class="flex space-x-4">
+      <a href="{% url 'login' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">Login</a>
+      <a href="{% url 'register' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out">Register</a>
+    </div>
   </div>
 {% endif %}
 {% endblock content %}
