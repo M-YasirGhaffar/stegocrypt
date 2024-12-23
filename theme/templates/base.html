@@ -1,40 +1,116 @@
-<!-- theme/templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Django Steganography{% endblock title %}</title>
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Django Steganography{% endblock title %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    <style>
+        .profile-colors {
+            background-color: var(--profile-bg, #4F46E5);
+            color: white;
+            transition: transform 0.2s;
+        }
+        .profile-colors:hover {
+            transform: scale(1.05);
+        }
+        .dropdown {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .dropdown.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+    <header class="bg-white shadow mb-4">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold mb-2 sm:mb-0">
+                <a href="{% url 'index' %}" class="hover:text-blue-600">Django Steganography</a>
+            </h1>
+            
+            <div class="flex items-center space-x-4">
+                <nav class="space-x-2 sm:space-x-4 flex flex-wrap justify-center items-center">
+                    {% block nav_links %}{% endblock nav_links %}
+                </nav>
 
-  <header class="bg-white shadow mb-4">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
-      <h1 class="text-2xl font-bold mb-2 sm:mb-0">Django Steganography</h1>
-      <nav class="space-x-2 sm:space-x-4 flex flex-wrap justify-center">
-        {% block nav_links %}{% endblock nav_links %}
-      </nav>
-    </div>
-  </header>
+                {% if user.is_authenticated and request.resolver_match.url_name == 'index' %}
+                <div class="relative" x-data="{ open: false }">
+                    <!-- Profile Button -->
+                    <button 
+                        @click="open = !open"
+                        class="profile-colors w-10 h-10 rounded-full flex items-center justify-center text-lg font-semibold focus:outline-none shadow-lg"
+                        style="--profile-bg: {% cycle '#4F46E5' '#DC2626' '#059669' '#7C3AED' '#2563EB' as bgColor %}"
+                    >
+                        {{ user.username|make_list|first|upper }}
+                    </button>
 
-  <main class="flex-grow max-w-7xl mx-auto px-4 w-full">
-    {% if messages %}
-      <ul class="my-4">
-        {% for msg in messages %}
-          <li class="bg-gray-200 p-2 rounded my-1">{{ msg }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    {% block content %}{% endblock content %}
-  </main>
+                    <!-- Dropdown Menu -->
+                    <div 
+                        @click.away="open = false"
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform scale-95"
+                        x-transition:enter-end="opacity-100 transform scale-100"
+                        class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10"
+                    >
+                        <div class="px-4 py-2 border-b">
+                            <p class="text-sm font-semibold">{{ user.username }}</p>
+                            <p class="text-xs text-gray-500">{{ user.email }}</p>
+                        </div>
+                        <div class="px-4 py-2 text-sm text-gray-700">
+                            <p class="py-1">Joined: {{ user.date_joined|date:"M d, Y" }}</p>
+                            <p class="py-1">Images: {{ user_info.total_images }}</p>
+                            <p class="py-1">Shared: {{ user_info.shared_with_me }}</p>
+                        </div>
+                        <div class="border-t">
+                            <a href="{% url 'logout' %}" 
+                               class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
 
-  <footer class="bg-white mt-8">
-    <div class="max-w-7xl mx-auto px-4 py-4 text-sm text-gray-500">
-      <p>&copy; 2023 Django Steganography - Extended &amp; Secure</p>
-    </div>
-  </footer>
+    <main class="flex-grow max-w-7xl mx-auto px-4 w-full">
+        {% if messages %}
+        <ul class="my-4">
+            {% for msg in messages %}
+            <li class="bg-gray-200 p-2 rounded my-1">{{ msg }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock content %}
+    </main>
 
+    <footer class="bg-white mt-8">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-sm text-gray-500">
+            <p>&copy; 2023 Django Steganography - Extended &amp; Secure</p>
+        </div>
+    </footer>
+
+    <!-- AlpineJS for dropdown functionality -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        // Set random color on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const colors = ['#4F46E5', '#DC2626', '#059669', '#7C3AED', '#2563EB'];
+            const profileBtn = document.querySelector('.profile-colors');
+            if (profileBtn) {
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                profileBtn.style.setProperty('--profile-bg', randomColor);
+            }
+        });
+    </script>
 </body>
 </html>

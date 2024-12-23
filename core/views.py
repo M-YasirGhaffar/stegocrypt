@@ -115,7 +115,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.success(request, "Logged out successfully.")
-    return redirect('index')
+    return redirect('login')
 
 @login_required
 def post_encrypt(request):
@@ -325,3 +325,4 @@ def get_image_preview(request, image_id):
     if image_data:
         return JsonResponse(image_data)
     return JsonResponse({'error': 'Could not generate preview'}, status=400)
+
