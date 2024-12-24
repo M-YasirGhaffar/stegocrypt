@@ -23,4 +23,8 @@ urlpatterns = [
 
     # External stego upload & pass-key
     path('decrypt-upload/', views.decrypt_upload_view, name='decrypt-upload'),
+    
+    # New API endpoints for previews and user info
+    path('api/user-info/', views.get_user_info, name='user-info'),
+    path('api/image-preview/<int:image_id>/', views.get_image_preview, name='image-preview'),
 ]

@@ -1,25 +1,55 @@
-<!-- core/templates/core/register.html -->
 {% extends "base.html" %}
-{% block title %}Register - Django Steg{% endblock title %}
+{% block title %}Register - StegoCrypt{% endblock title %}
 
 {% block nav_links %}
-  <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Home</a>
-  <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login</a>
-  <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register</a>
+<a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Home</a>
+<a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Login</a>
+<a href="{% url 'register' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Register</a>
 {% endblock nav_links %}
 
 {% block content %}
-<div class="max-w-md mx-auto bg-white rounded shadow p-6 my-4">
-  <h3 class="text-xl font-semibold mb-4">Register</h3>
-  <p class="text-sm text-gray-600 mb-2">
-    Password must meet strong criteria (8+ chars, upper, lower, digit, special).
-  </p>
-  <form method="POST" class="space-y-4">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-      Register
-    </button>
-  </form>
+<div class="max-w-md mx-auto">
+  <div class="bg-white shadow-md rounded-lg p-8">
+    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Register for StegoCrypt</h3>
+    <p class="text-sm text-gray-600 mb-6">
+      Password must meet strong criteria (8+ chars, upper, lower, digit, special).
+    </p>
+    <form method="POST" class="space-y-6">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            {{ field.label }}
+          </label>
+          <div class="mt-1">
+            <input type="{{ field.field.widget.input_type }}" 
+                   name="{{ field.html_name }}"
+                   id="{{ field.id_for_label }}"
+                   class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="Enter your {{ field.label|lower }}">
+          </div>
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div>
+        <button type="submit" class="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Register
+        </button>
+      </div>
+    </form>
+    <div class="mt-6 text-center">
+      <p class="text-sm text-gray-600">
+        Already have an account? 
+        <a href="{% url 'login' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
+          Login here
+        </a>
+      </p>
+    </div>
+  </div>
 </div>
 {% endblock %}
