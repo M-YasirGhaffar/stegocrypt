@@ -164,8 +164,11 @@
         <div class="space-y-4">
           {% for image in my_images %}
           <div class="bg-gray-50 rounded-lg p-4">
-            <div class="relative aspect-w-16 aspect-h-9 mb-4">
-              <img src="{{ image.image.url }}" alt="Encrypted image" class="object-cover rounded-lg">
+            <!-- Preview container -->
+            <div id="preview-my-{{ image.id }}" class="relative aspect-w-16 aspect-h-9 mb-4">
+              <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+                <div class="animate-pulse text-gray-400">Loading preview...</div>
+              </div>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-500">#{{ image.id }} {% if image.is_public %}(Shareable){% else %}(Private){% endif %}</span>
@@ -196,8 +199,11 @@
         <div class="space-y-4">
           {% for image in shared_images %}
           <div class="bg-gray-50 rounded-lg p-4">
-            <div class="relative aspect-w-16 aspect-h-9 mb-4">
-              <img src="{{ image.image.url }}" alt="Shared encrypted image" class="object-cover rounded-lg">
+            <!-- Preview container -->
+            <div id="preview-shared-{{ image.id }}" class="relative aspect-w-16 aspect-h-9 mb-4">
+              <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+                <div class="animate-pulse text-gray-400">Loading preview...</div>
+              </div>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-500">#{{ image.id }} by {{ image.owner }}</span>
@@ -232,5 +238,56 @@
     </div>
   </div>
 {% endif %}
-{% endblock content %}
+{% comment %} {% endblock content %} {% endcomment %}
 
+<!-- Image Preview Loading Script -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Load preview images for user's own images
+    const myPreviews = document.querySelectorAll('div[id^="preview-my-"]');
+    myPreviews.forEach(div => {
+      const imgId = div.id.replace('preview-my-', '');
+      fetch(`/api/image-preview/${imgId}/`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.preview) {
+            div.innerHTML = `
+              <img src="${data.preview}" 
+                   alt="Preview" 
+                   class="w-full h-full object-cover rounded-lg"
+                   onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center bg-gray-100 rounded-lg\'><span class=\'text-gray-400\'>Preview unavailable</span></div>';"
+              >`;
+          }
+        })
+        .catch(() => {
+          div.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+            <span class="text-gray-400">Preview unavailable</span>
+          </div>`;
+        });
+    });
+  
+    // Load preview images for shared images
+    const sharedPreviews = document.querySelectorAll('div[id^="preview-shared-"]');
+    sharedPreviews.forEach(div => {
+      const imgId = div.id.replace('preview-shared-', '');
+      fetch(`/api/image-preview/${imgId}/`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.preview) {
+            div.innerHTML = `
+              <img src="${data.preview}" 
+                   alt="Preview" 
+                   class="w-full h-full object-cover rounded-lg"
+                   onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center bg-gray-100 rounded-lg\'><span class=\'text-gray-400\'>Preview unavailable</span></div>';"
+              >`;
+          }
+        })
+        .catch(() => {
+          div.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg">
+            <span class="text-gray-400">Preview unavailable</span>
+          </div>`;
+        });
+    });
+  });
+  </script>
+  {% endblock content %}
