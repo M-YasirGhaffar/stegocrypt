@@ -35,8 +35,10 @@ wheels/
 db.sqlite3
 
 # Media files
-media/original_images/
-media/stego_images/
+media/original_images/*
+media/stego_images/*
+!media/original_images/.gitkeep
+!media/stego_images/.gitkeep
 
 # Unit test / coverage reports
 htmlcov/
