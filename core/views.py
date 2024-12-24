@@ -13,7 +13,6 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from .utils import create_thumbnail, get_image_data
 
-
 from .models import EncryptedImage
 from .forms import (
     RegisterForm,
@@ -23,12 +22,15 @@ from .forms import (
     ShareForm,
     DecryptionUploadForm
 )
+from .models import EncryptedImage, SharedImageKey
 from .utils import (
     sha256_hash,
     encrypt_with_master_key,
     decrypt_with_master_key,
     aes_encrypt,
-    aes_decrypt
+    aes_decrypt,
+    create_thumbnail,
+    get_image_data
 )
 from .encryption import encrypt_and_embed_message, create_stego_django_file
 from .decryption import decrypt_message_from_stego
@@ -174,13 +176,8 @@ def post_decrypt(request, image_id):
         messages.error(request, "Please provide pass-key or account password.")
         return redirect('index')
 
-    import hashlib
-
-    # 1) pass-key approach
-    salt = eimg.pass_key_salt or ''
-    test_hash = hashlib.sha256((pass_or_pw + salt).encode('utf-8')).hexdigest()
-    if test_hash == eimg.pass_key_hash:
-        # correct pass-key
+    # 1) Try direct pass-key first
+    if eimg.verify_pass_key(pass_or_pw):
         success, plaintext = decrypt_message_from_stego(eimg.stego_image.path, pass_or_pw)
         if success:
             if eimg.message_hash and eimg.message_hash != sha256_hash(plaintext.encode('utf-8')):
@@ -188,40 +185,38 @@ def post_decrypt(request, image_id):
             else:
                 request.session['last_decrypted_msg'] = plaintext
                 request.session['last_decrypted_img_id'] = eimg.id
-        else:
-            request.session['last_decrypted_error'] = plaintext
-        return redirect('index')
+            return redirect('index')
 
-    # 2) else if user == owner => try account password approach
-    if eimg.user == request.user:
-        # Check if typed pass_or_pw is the correct user password
-        from django.contrib.auth.hashers import check_password
-        if check_password(pass_or_pw, request.user.password):
-            # decrypt real pass-key from DB
-            from .utils import decrypt_with_master_key
-            iv = eimg.encrypted_key_iv
-            ciph = eimg.encrypted_key_for_owner
-            if not iv or not ciph:
-                request.session['last_decrypted_error'] = "No pass-key stored for the owner."
-                return redirect('index')
+    # 2) Try account password for both owner and shared users
+    if check_password(pass_or_pw, request.user.password):
+        try:
+            if eimg.user == request.user:
+                # Owner: get key from encrypted_key_for_owner
+                iv = eimg.encrypted_key_iv
+                ciph = eimg.encrypted_key_for_owner
+            else:
+                # Shared user: get key from SharedImageKey
+                shared_key = SharedImageKey.objects.get(image=eimg, user=request.user)
+                iv = shared_key.key_iv
+                ciph = shared_key.encrypted_key
 
-            try:
-                real_pass_key = decrypt_with_master_key(iv, ciph).decode('utf-8')
-                success, plaintext = decrypt_message_from_stego(eimg.stego_image.path, real_pass_key)
-                if success:
-                    if eimg.message_hash and eimg.message_hash != sha256_hash(plaintext.encode('utf-8')):
-                        request.session['last_decrypted_error'] = "Hash mismatch! Possibly tampered."
-                    else:
-                        request.session['last_decrypted_msg'] = plaintext
-                        request.session['last_decrypted_img_id'] = eimg.id
+            real_pass_key = decrypt_with_master_key(iv, ciph).decode('utf-8')
+            success, plaintext = decrypt_message_from_stego(eimg.stego_image.path, real_pass_key)
+            
+            if success:
+                if eimg.message_hash and eimg.message_hash != sha256_hash(plaintext.encode('utf-8')):
+                    request.session['last_decrypted_error'] = "Hash mismatch! Possibly tampered."
                 else:
-                    request.session['last_decrypted_error'] = plaintext
-            except Exception as ex:
-                request.session['last_decrypted_error'] = f"Could not decrypt the pass-key: {ex}"
-        else:
-            request.session['last_decrypted_error'] = "Incorrect account password."
+                    request.session['last_decrypted_msg'] = plaintext
+                    request.session['last_decrypted_img_id'] = eimg.id
+            else:
+                request.session['last_decrypted_error'] = plaintext
+        except SharedImageKey.DoesNotExist:
+            request.session['last_decrypted_error'] = "No stored key found for shared user."
+        except Exception as ex:
+            request.session['last_decrypted_error'] = f"Decryption error: {ex}"
     else:
-        request.session['last_decrypted_error'] = "Incorrect pass-key."
+        request.session['last_decrypted_error'] = "Invalid pass-key or password."
 
     return redirect('index')
 
@@ -238,32 +233,47 @@ def download_stego_image(request, image_id):
 @login_required
 def share_image_view(request, image_id):
     eimg = get_object_or_404(EncryptedImage, id=image_id)
+    
+    # Verify ownership
     if eimg.user != request.user:
-        messages.error(request, "Only the owner can share.")
+        messages.error(request, "Only the owner can share this image.")
         return redirect('index')
-    if not eimg.is_public:
-        messages.error(request, "This image is private and cannot be shared.")
-        return redirect('index')
-
+        
+    # Handle share form submission
     if request.method == 'POST':
         form = ShareForm(request.POST)
         if form.is_valid():
-            rec_user = form.cleaned_data['recipient_username']
             try:
-                recipient = User.objects.get(username=rec_user)
+                recipient = User.objects.get(
+                    username=form.cleaned_data['recipient_username']
+                )
+                
+                # Share with new user
+                if eimg.share_with_user(recipient):
+                    messages.success(
+                        request, 
+                        f"Image shared with {recipient.username}"
+                    )
+                else:
+                    messages.error(
+                        request,
+                        "Could not share image. Make sure it's public."
+                    )
+                    
             except User.DoesNotExist:
                 messages.error(request, "User not found.")
-                return redirect('index')
-            eimg.shared_with.add(recipient)
-            eimg.save()
-            messages.success(request, f"Image #{eimg.id} shared with {rec_user}!")
-        else:
-            messages.error(request, "Form invalid.")
+            except Exception as ex:
+                messages.error(request, f"Share failed: {ex}")
+                
         return redirect('index')
-    else:
-        form = ShareForm()
-    return render(request, 'core/share_image.html', {'image': eimg, 'form': form})
-
+        
+    # Display share form
+    form = ShareForm()
+    return render(request, 'core/share_image.html', {
+        'image': eimg,
+        'form': form
+    })
+    
 @login_required
 def decrypt_upload_view(request):
     if request.method == 'POST':
