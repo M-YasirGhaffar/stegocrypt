@@ -64,6 +64,10 @@ SESSION_COOKIE_SECURE = True
 
 ROOT_URLCONF = 'steganography.urls'
 
+LOGIN_URL = 'login'  # Remove leading slash
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = 'login'  # Remove leading slash
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
