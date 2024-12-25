@@ -33,11 +33,32 @@
       fileName: '',
       previewUrl: '',
       handleFile(event) {
-        const file = event.target.files[0] || (event.dataTransfer && event.dataTransfer.files[0]);
+        const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
         if (file) {
+          // Validate file size first
+          const maxSize = 10 * 1024 * 1024; // 10MB
+          if (file.size > maxSize) {
+            alert('File too large! Maximum size allowed is 10MB');
+            this.clearFileAndPreview(event.target);
+            return false;
+          }
+          if (!file.type.startsWith('image/')) {
+            alert('Please upload only image files');
+            this.clearFileAndPreview(event.target);
+            return false;
+          }
+          // Only set preview if validation passes
           this.fileName = file.name;
           this.previewUrl = URL.createObjectURL(file);
         }
+      },
+      clearFileAndPreview(input) {
+        if (input) input.value = ''; // Clear input
+        if (this.previewUrl) {
+          URL.revokeObjectURL(this.previewUrl); // Clean up object URL
+          this.previewUrl = ''; // Clear preview
+        }
+        this.fileName = ''; // Reset filename
       }
     }">
       <div class="flex justify-between items-center mb-6">
@@ -73,7 +94,11 @@
               <div class="flex text-sm text-gray-600">
                 <label class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
                   <span>Upload a file</span>
-                  <input type="file" name="original_image" class="sr-only" accept="image/*" @change="handleFile($event)">
+                  <input type="file" 
+                  name="original_image" 
+                  class="sr-only" 
+                  accept="image/*" 
+                  @change="handleFile($event)">
                 </label>
                 <p class="pl-1">or drag and drop</p>
               </div>
@@ -129,7 +154,11 @@
               <div class="flex text-sm text-gray-600">
                 <label class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
                   <span>Upload a file</span>
-                  <input type="file" name="stego_image_file" class="sr-only" accept="image/*" @change="handleFile($event)">
+                  <input type="file" 
+                  name="stego_image_file" 
+                  class="sr-only" 
+                  accept="image/*" 
+                  @change="handleFile($event)">                  
                 </label>
                 <p class="pl-1">or drag and drop</p>
               </div>
@@ -243,7 +272,44 @@
 <!-- Image Preview Loading Script -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Load preview images for user's own images
+    // File validation function
+    function validateFile(file) {
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        alert('File too large! Maximum size allowed is 10MB');
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload only image files');
+        return false;
+      }
+      return true;
+    }
+
+    // Add validation to file inputs
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+      input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file && !validateFile(file)) {
+          event.target.value = ''; // Clear the input
+          return false;
+        }
+      });
+    });
+
+    // Modify drag and drop handlers
+    const dropZones = document.querySelectorAll('[x-data]');
+    dropZones.forEach(zone => {
+      zone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        const file = event.dataTransfer.files[0];
+        if (file && !validateFile(file)) {
+          return false;
+        }
+      });
+    });
+
+    // Existing preview loading code
     const myPreviews = document.querySelectorAll('div[id^="preview-my-"]');
     myPreviews.forEach(div => {
       const imgId = div.id.replace('preview-my-', '');
@@ -289,5 +355,6 @@
         });
     });
   });
-  </script>
-  {% endblock content %}
+</script>
+
+{% endblock content %}

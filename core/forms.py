@@ -59,6 +59,16 @@ class EncryptionForm(forms.Form):
         required=True, label="Pass-Key"
     )
     is_public = forms.BooleanField(required=False, label="Allow sharing?")
+    
+        # Add to EncryptionForm
+    def clean_original_image(self):
+        image = self.cleaned_data.get('original_image')
+        if image:
+            if image.size > 10 * 1024 * 1024:
+                raise ValidationError("Image too large")
+            if not image.content_type.startswith('image/'):
+                raise ValidationError("Invalid file type")
+        return image
 
 class DecryptSingleFieldForm(forms.Form):
     pass_or_pw = forms.CharField(
