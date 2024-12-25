@@ -2,7 +2,7 @@
 {% block title %}Login - StegoCrypt{% endblock title %}
 
 {% block nav_links %}
-<a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Home</a>
+{% comment %} <a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Home</a> {% endcomment %}
 <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Login</a>
 <a href="{% url 'register' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Register</a>
 {% endblock nav_links %}

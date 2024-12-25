@@ -4,7 +4,7 @@
 
 {% block nav_links %}
   {% if user.is_authenticated %}
-    <a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Dashboard</a>
+    <a href="{% url 'index' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out"></a>
   {% else %}
     <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Login</a>
     <a href="{% url 'register' %}" class="text-gray-700 hover:text-indigo-600 transition duration-150 ease-in-out">Register</a>
