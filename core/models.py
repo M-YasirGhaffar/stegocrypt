@@ -73,3 +73,4 @@ class SharedImageKey(models.Model):
     
     class Meta:
         unique_together = ['image', 'user']
+        

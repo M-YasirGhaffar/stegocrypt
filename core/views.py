@@ -12,6 +12,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from .utils import create_thumbnail, get_image_data
+from django.core.cache import cache
 
 from .models import EncryptedImage
 from .forms import (
@@ -32,6 +33,15 @@ from .utils import (
     create_thumbnail,
     get_image_data
 )
+
+from .decorators import (
+    login_rate_limit, 
+    register_rate_limit, 
+    api_rate_limit,
+    upload_rate_limit,
+    require_https
+)
+
 from .encryption import encrypt_and_embed_message, create_stego_django_file
 from .decryption import decrypt_message_from_stego
 
@@ -79,6 +89,7 @@ def index(request):
         return JsonResponse(context)
     return render(request, 'core/index.html', context)
 
+@register_rate_limit
 def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
@@ -97,6 +108,7 @@ def register_view(request):
         form = RegisterForm()
     return render(request, 'core/register.html', {'form': form})
 
+@login_rate_limit
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -120,6 +132,7 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
+@upload_rate_limit
 def post_encrypt(request):
     if request.method == 'POST':
         form = EncryptionForm(request.POST, request.FILES)
@@ -164,6 +177,7 @@ def post_encrypt(request):
     return redirect('index')
 
 @login_required
+@require_https
 def post_decrypt(request, image_id):
     eimg = get_object_or_404(EncryptedImage, id=image_id)
     # check permission
@@ -323,6 +337,7 @@ def get_user_info(request):
     })
     
 @login_required
+@api_rate_limit
 def get_image_preview(request, image_id):
     """Return image preview and metadata"""
     eimg = get_object_or_404(EncryptedImage, id=image_id)
