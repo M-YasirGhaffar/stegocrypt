@@ -3,3 +3,6 @@ cryptography
 Stegano
 Pillow
 django-tailwind
+python-dotenv
+whitenoise
+gunicorn

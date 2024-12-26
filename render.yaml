@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: stegocrypt
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn steganography.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
