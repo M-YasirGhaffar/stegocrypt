@@ -1,0 +1,7 @@
+# Create directory structure (if not exists)
+mkdir -p media/original_images
+mkdir -p media/stego_images
+
+# Create empty .gitkeep files
+type nul > media/original_images/.gitkeep
+type nul > media/stego_images/
