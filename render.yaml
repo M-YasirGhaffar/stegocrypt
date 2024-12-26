@@ -10,4 +10,6 @@ services:
       - key: DEBUG
         value: False
       - key: ALLOWED_HOSTS
-        value: .onrender.com
+        value: .onrender.com,stegocrypt.onrender.com
+      - key: SECRET_KEY  # Add this for security
+        generateValue: true

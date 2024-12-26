@@ -9,10 +9,25 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-YOUR-VERY-SECRET-KEY'
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-YOUR-VERY-SECRET-KEY')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'False') != 'False'
+
+# Parse ALLOWED_HOSTS from environment variable or use default
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 DEBUG = True
-ALLOWED_HOSTS = []
+# Update ALLOWED_HOSTS
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1',
+    'stegocrypt.onrender.com',  # Add your Render domain
+    '.onrender.com'  # Allows all subdomains on render.com
+]
+
+DEBUG = 'RENDER' not in os.environ
 
 INSTALLED_APPS = [
     'django.contrib.admin',
