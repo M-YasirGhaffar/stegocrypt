@@ -6,3 +6,4 @@ django-tailwind
 python-dotenv
 whitenoise
 gunicorn
+dj-database-url

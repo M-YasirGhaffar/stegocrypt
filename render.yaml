@@ -2,7 +2,9 @@ services:
   - type: web
     name: stegocrypt
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
     startCommand: gunicorn steganography.wsgi:application
     envVars:
       - key: PYTHON_VERSION
@@ -10,6 +12,8 @@ services:
       - key: DEBUG
         value: False
       - key: ALLOWED_HOSTS
-        value: .onrender.com,stegocrypt.onrender.com
-      - key: SECRET_KEY  # Add this for security
+        value: stegocrypt.onrender.com,.onrender.com
+      - key: SECRET_KEY
         generateValue: true
+      - key: DJANGO_SETTINGS_MODULE
+        value: steganography.settings
